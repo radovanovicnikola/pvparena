@@ -13,13 +13,12 @@ int main(int argc, char* args[]) {
 	
 	//testiranje game objecta
 	GameObject* gameObject = new GameObject(txtrTest);
-	gameObject->texture = txtrTest;
 	gameObject->rectScreen = { 20,20,128,128 };
 
 	//main loop
 	while (!Window::quit) {
 		//obrada eventa
-		while (SDL_PollEvent(&Window::event)) {
+		while (SDL_WaitEvent(&Window::event)) {
 			if (Window::event.type == SDL_EventType::SDL_QUIT)
 			{
 				Window::quit = true;
