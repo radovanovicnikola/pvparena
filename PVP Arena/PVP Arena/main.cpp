@@ -1,6 +1,23 @@
 #include "Window.h"
 #include "MediaLoader.h"
 #include "GameObject.h"
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+enum class ThreadMsg {
+	NoMsg = -1,
+	Draw,
+	Quit
+};
+
+GameObject* gameObject;
+std::mutex m;
+std::condition_variable cv;
+ThreadMsg threadMsg;
+
+
+void drawingThreadF();
 
 int main(int argc, char* args[]) {
 	//init
@@ -12,16 +29,20 @@ int main(int argc, char* args[]) {
 	SDL_Texture* txtrTest = MediaLoader::loadTexture("Tile (1).png");
 	
 	//testiranje game objecta
-	GameObject* gameObject = new GameObject(txtrTest);
+	gameObject = new GameObject(txtrTest);
 	gameObject->rectScreen = { 20,20,128,128 };
+
+	//inicijalizovanje pomocnjih niti
+	std::thread drawingThread(drawingThreadF);
 
 	//main loop
 	while (!Window::quit) {
 		//obrada eventa
-		while (SDL_WaitEvent(&Window::event)) {
+		while (SDL_WaitEvent(&Window::event)) { //sleep if no event
 			if (Window::event.type == SDL_EventType::SDL_QUIT)
 			{
 				Window::quit = true;
+				break; //break while wait loop
 			}
 			else if (Window::event.type == SDL_EventType::SDL_KEYDOWN) {
 				switch (Window::event.key.keysym.sym)
@@ -42,18 +63,51 @@ int main(int argc, char* args[]) {
 					break;
 				}
 			}
+			if (gameObject->needToDraw) { //if need to draw send msg to slave thread
+				threadMsg = ThreadMsg::Draw;
+				cv.notify_one();
+			}
 		}
 
-		if (gameObject->needToDraw) {
-			Window::clear();
-			gameObject->draw();
-			Window::update();
-		}
 	}
+
+	//send Quit msg to slave thread
+	threadMsg = ThreadMsg::Quit;
+	cv.notify_one();
+	if(drawingThread.joinable())
+		drawingThread.join();
 
 	Window::free();
 	MediaLoader::free();
 	SDL_DestroyTexture(txtrTest);
 
 	return 0;
+}
+
+void drawingThreadF() {
+	bool quit = false;
+
+	while (!quit) {
+		printf("Ceka se...\n");
+		{
+			std::unique_lock<std::mutex > lk(m);
+			cv.wait(lk, [] {return threadMsg != ThreadMsg::NoMsg; }); //wait for threadMgs (event)
+			//if no event sleep
+		}
+		printf("Primljena poruka.\n");
+		switch (threadMsg)
+		{
+		case ThreadMsg::Draw:
+			Window::clear();
+			gameObject->draw();
+			Window::update();
+			break;
+		case ThreadMsg::Quit:
+			quit = true;
+			break;
+		default:
+			break;
+		}
+		threadMsg = ThreadMsg::NoMsg; //event handled
+	}
 }
