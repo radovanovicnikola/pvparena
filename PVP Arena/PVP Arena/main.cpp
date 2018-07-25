@@ -4,6 +4,8 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include<Windows.h>
+#include "SDL_syswm.h"
 
 enum class ThreadMsg {
 	NoMsg = -1,
@@ -35,10 +37,20 @@ int main(int argc, char* args[]) {
 	//inicijalizovanje pomocnjih niti
 	std::thread drawingThread(drawingThreadF);
 
+	//radi samo za Windows
+	SDL_SysWMinfo wmInfo;
+	SDL_VERSION(&wmInfo.version);
+	SDL_GetWindowWMInfo(Window::window, &wmInfo);
+	HWND hwnd = wmInfo.info.win.window;
+	HINSTANCE hInst= wmInfo.info.win.hinstance;
+
+	HWND editctl = CreateWindow(L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_LEFT | ES_AUTOHSCROLL | ES_WANTRETURN, 400,50, 100, 50,hwnd, (HMENU)NULL, hInst, 0);
+	char edtText[2000];
 	//main loop
 	while (!Window::quit) {
 		//obrada eventa
 		while (SDL_WaitEvent(&Window::event)) { //sleep if no event
+			
 			if (Window::event.type == SDL_EventType::SDL_QUIT)
 			{
 				Window::quit = true;
@@ -59,9 +71,16 @@ int main(int argc, char* args[]) {
 				case SDLK_DOWN:
 					gameObject->moveVerticalS(5);
 					break;
+				case SDLK_SPACE://test; preuzimanje unetog teksta
+					GetWindowTextA(editctl, edtText, 2000);
+					MessageBoxA(hwnd, edtText, "Test", MB_OK);
+					break;
 				default:
 					break;
 				}
+			}
+			else if (Window::event.type == SDL_EventType::SDL_MOUSEBUTTONDOWN) {
+				SetFocus(hwnd);			//vracanje focusa sa edit boxa na glavni prozor	
 			}
 			if (gameObject->needToDraw) { //if need to draw send msg to slave thread
 				threadMsg = ThreadMsg::Draw;
