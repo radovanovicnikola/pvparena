@@ -1,0 +1,12 @@
+<TextureAtlas imagePath="sprites.png">
+	<SubTexture name="0.png" x="329" y="842" width="311" height="337"/>
+	<SubTexture name="1.png" x="328" y="1435" width="321" height="319"/>
+	<SubTexture name="2.png" x="0" y="1721" width="326" height="298"/>
+	<SubTexture name="3.png" x="0" y="842" width="327" height="297"/>
+	<SubTexture name="4.png" x="0" y="1141" width="327" height="292"/>
+	<SubTexture name="5.png" x="0" y="1435" width="326" height="284"/>
+	<SubTexture name="6.png" x="0" y="267" width="356" height="271"/>
+	<SubTexture name="7.png" x="0" y="0" width="389" height="265"/>
+	<SubTexture name="8.png" x="0" y="540" width="347" height="300"/>
+	<SubTexture name="9.png" x="358" y="267" width="301" height="346"/>
+</TextureAtlas>
